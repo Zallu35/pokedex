@@ -12,7 +12,7 @@ import (
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(*pokecache.Cache, *config) error
+	callback    func(*pokecache.Cache, *config, string) error
 }
 
 type config struct {
@@ -26,13 +26,13 @@ type locationData struct {
 	Results  []map[string]string `json:"results"`
 }
 
-func commandExit(cache *pokecache.Cache, cf *config) error {
+func commandExit(cache *pokecache.Cache, cf *config, unused string) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
-func commandHelp(cache *pokecache.Cache, cf *config) error {
+func commandHelp(cache *pokecache.Cache, cf *config, unused string) error {
 	fmt.Println(`
 	Welcome to the Pokedex!
 	Usage:
@@ -73,7 +73,7 @@ func fetchLocations(cache *pokecache.Cache, url string) (locationData, error) {
 	return loc, nil
 }
 
-func commandMap(cache *pokecache.Cache, cf *config) error {
+func commandMap(cache *pokecache.Cache, cf *config, unused string) error {
 	if cf.Next == "" {
 		cf.Next = "https://pokeapi.co/api/v2/location-area/"
 	}
@@ -92,7 +92,7 @@ func commandMap(cache *pokecache.Cache, cf *config) error {
 	return nil
 }
 
-func commandMapb(cache *pokecache.Cache, cf *config) error {
+func commandMapb(cache *pokecache.Cache, cf *config, unused string) error {
 	if cf.Previous == "" {
 		fmt.Println("you're on the first page")
 		return nil

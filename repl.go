@@ -42,10 +42,14 @@ func startREPL(cache *pokecache.Cache) {
 		}
 		//fmt.Printf("Your command was: %s\n", wordList[0])
 		commandName := wordList[0]
+		parameter := ""
+		if len(wordList) > 1 {
+			parameter = wordList[1]
+		}
 
 		command, exists := getCommands()[commandName]
 		if exists {
-			err := command.callback(cache, &configFile)
+			err := command.callback(cache, &configFile, parameter)
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -78,6 +82,11 @@ func getCommands() map[string]cliCommand {
 			name:        "mapb",
 			description: "Prints the last 20 locations from map",
 			callback:    commandMapb,
+		},
+		"explore": {
+			name:        "explore",
+			description: "Lists pokemon found in a given area",
+			callback:    commandExplore,
 		},
 	}
 }

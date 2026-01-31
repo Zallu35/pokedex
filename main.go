@@ -1,8 +1,12 @@
 package main
 
-// import
+import (
+	"pokedex/internal/pokeapi/pokecache"
+	"time"
+)
 
 func main() {
-	startREPL()
+	theCache := pokecache.NewCache(5 * time.Second)
+	startREPL(theCache)
 
 }

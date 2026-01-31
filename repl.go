@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"pokedex/internal/pokeapi/pokecache"
 	"strings"
 )
 
@@ -27,7 +28,7 @@ func cleanInput(text string) []string {
 	return stringList
 }
 
-func startREPL() {
+func startREPL(cache *pokecache.Cache) {
 	scanner := bufio.NewScanner(os.Stdin)
 	var configFile config
 
@@ -44,7 +45,7 @@ func startREPL() {
 
 		command, exists := getCommands()[commandName]
 		if exists {
-			err := command.callback(&configFile)
+			err := command.callback(cache, &configFile)
 			if err != nil {
 				fmt.Println(err)
 			}

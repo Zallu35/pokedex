@@ -6,12 +6,13 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"pokedex/internal/pokeapi/pokecache"
 )
 
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(*config) error
+	callback    func(*pokecache.Cache, *config) error
 }
 
 type config struct {
@@ -25,13 +26,13 @@ type locationData struct {
 	Results  []map[string]string `json:"results"`
 }
 
-func commandExit(cf *config) error {
+func commandExit(cache *pokecache.Cache, cf *config) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
-func commandHelp(cf *config) error {
+func commandHelp(cache *pokecache.Cache, cf *config) error {
 	fmt.Println(`
 	Welcome to the Pokedex!
 	Usage:
@@ -43,36 +44,41 @@ func commandHelp(cf *config) error {
 	return nil
 }
 
-func fetchLocations(url string) (locationData, error) {
-	res, err := http.Get(url)
-	if err != nil {
-		return locationData{}, err
-	}
-	defer res.Body.Close()
+func fetchLocations(cache *pokecache.Cache, url string) (locationData, error) {
+	data, ok := cache.Get(url)
+	if !ok {
+		res, err := http.Get(url)
+		if err != nil {
+			return locationData{}, fmt.Errorf("http response error: %v", err)
+		}
+		defer res.Body.Close()
 
-	data, err := io.ReadAll(res.Body)
-	if err != nil {
-		return locationData{}, err
-	}
+		data, err = io.ReadAll(res.Body)
+		if err != nil {
+			return locationData{}, fmt.Errorf("io Read error: %v", err)
+		}
 
-	if res.StatusCode > 299 {
-		return locationData{}, fmt.Errorf("response failed with status code: %d and\nbody: %s\n", res.StatusCode, data)
+		if res.StatusCode > 299 {
+			return locationData{}, fmt.Errorf("response failed with status code: %d and\nbody: %s\n", res.StatusCode, data)
+		}
+
+		cache.Add(url, data)
 	}
 
 	loc := locationData{}
 	if err := json.Unmarshal(data, &loc); err != nil {
-		return locationData{}, err
+		return locationData{}, fmt.Errorf("Unmarshal error: %v", err)
 	}
 
 	return loc, nil
 }
 
-func commandMap(cf *config) error {
+func commandMap(cache *pokecache.Cache, cf *config) error {
 	if cf.Next == "" {
 		cf.Next = "https://pokeapi.co/api/v2/location-area/"
 	}
 
-	loc, err := fetchLocations(cf.Next)
+	loc, err := fetchLocations(cache, cf.Next)
 	if err != nil {
 		return err
 	}
@@ -86,13 +92,13 @@ func commandMap(cf *config) error {
 	return nil
 }
 
-func commandMapb(cf *config) error {
+func commandMapb(cache *pokecache.Cache, cf *config) error {
 	if cf.Previous == "" {
 		fmt.Println("you're on the first page")
 		return nil
 	}
 
-	loc, err := fetchLocations(cf.Previous)
+	loc, err := fetchLocations(cache, cf.Previous)
 	if err != nil {
 		return err
 	}

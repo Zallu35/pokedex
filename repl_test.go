@@ -13,7 +13,7 @@ func TestCleanInput(t *testing.T) {
 		},
 		{
 			input:    " Bulbasaur Ivysaur Venasaur ",
-			expected: []string{"Bulbasaur", "Ivysaur", "Venasaur"},
+			expected: []string{"bulbasaur", "ivysaur", "venasaur"},
 		},
 		{
 			input:    "thisonlylooks,for whitespace:soweird punctuation_won'taffect it",

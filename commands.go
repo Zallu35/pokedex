@@ -19,11 +19,6 @@ type config struct {
 	Previous string
 }
 
-type dex struct {
-	totalCaught int
-	pokemonList map[string]pokemonData
-}
-
 func commandExit(cache *pokecache.Cache, cf *config, a *dex, unused string) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)

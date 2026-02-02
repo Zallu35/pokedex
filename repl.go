@@ -98,5 +98,15 @@ func getCommands() map[string]cliCommand {
 			description: "scanning for max base exp value",
 			callback:    baseExpScan,
 		},*/
+		"inspect": {
+			name:        "inspect",
+			description: "view information about a caught pokemon",
+			callback:    commandInspect,
+		},
+		"pokedex": {
+			name:        "pokedex",
+			description: "list pokemon recorded in the pokedex",
+			callback:    commandPokedex,
+		},
 	}
 }

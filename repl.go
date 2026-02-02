@@ -28,7 +28,7 @@ func cleanInput(text string) []string {
 	return stringList
 }
 
-func startREPL(cache *pokecache.Cache) {
+func startREPL(cache *pokecache.Cache, pkDex *dex) {
 	scanner := bufio.NewScanner(os.Stdin)
 	var configFile config
 
@@ -49,7 +49,7 @@ func startREPL(cache *pokecache.Cache) {
 
 		command, exists := getCommands()[commandName]
 		if exists {
-			err := command.callback(cache, &configFile, parameter)
+			err := command.callback(cache, &configFile, pkDex, parameter)
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -88,5 +88,15 @@ func getCommands() map[string]cliCommand {
 			description: "Lists pokemon found in a given area",
 			callback:    commandExplore,
 		},
+		"catch": {
+			name:        "catch",
+			description: "attempt to catch a pokemon",
+			callback:    commandCatch,
+		},
+		/*"scan": {
+			name:        "scan",
+			description: "scanning for max base exp value",
+			callback:    baseExpScan,
+		},*/
 	}
 }

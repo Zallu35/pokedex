@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,7 +11,7 @@ import (
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(*pokecache.Cache, *config, string) error
+	callback    func(*pokecache.Cache, *config, *dex, string) error
 }
 
 type config struct {
@@ -20,19 +19,18 @@ type config struct {
 	Previous string
 }
 
-type locationData struct {
-	Next     string              `json:"next"`
-	Previous string              `json:"previous"`
-	Results  []map[string]string `json:"results"`
+type dex struct {
+	totalCaught int
+	pokemonList map[string]pokemonData
 }
 
-func commandExit(cache *pokecache.Cache, cf *config, unused string) error {
+func commandExit(cache *pokecache.Cache, cf *config, a *dex, unused string) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
-func commandHelp(cache *pokecache.Cache, cf *config, unused string) error {
+func commandHelp(cache *pokecache.Cache, cf *config, a *dex, unused string) error {
 	fmt.Println(`
 	Welcome to the Pokedex!
 	Usage:
@@ -44,70 +42,67 @@ func commandHelp(cache *pokecache.Cache, cf *config, unused string) error {
 	return nil
 }
 
-func fetchLocations(cache *pokecache.Cache, url string) (locationData, error) {
+func fetchData(cache *pokecache.Cache, url string) ([]byte, error) {
 	data, ok := cache.Get(url)
 	if !ok {
 		res, err := http.Get(url)
 		if err != nil {
-			return locationData{}, fmt.Errorf("http response error: %v", err)
+			return nil, fmt.Errorf("http response error: %v", err)
 		}
 		defer res.Body.Close()
 
-		data, err = io.ReadAll(res.Body)
-		if err != nil {
-			return locationData{}, fmt.Errorf("io Read error: %v", err)
+		if res.StatusCode > 299 {
+			return nil, fmt.Errorf("response failed with status code %d and \nbody: %s\n", res.StatusCode, data)
 		}
 
-		if res.StatusCode > 299 {
-			return locationData{}, fmt.Errorf("response failed with status code: %d and\nbody: %s\n", res.StatusCode, data)
+		data, err = io.ReadAll(res.Body)
+		if err != nil {
+			return nil, fmt.Errorf("io read error %v", err)
 		}
 
 		cache.Add(url, data)
 	}
-
-	loc := locationData{}
-	if err := json.Unmarshal(data, &loc); err != nil {
-		return locationData{}, fmt.Errorf("Unmarshal error: %v", err)
-	}
-
-	return loc, nil
+	return data, nil
 }
 
-func commandMap(cache *pokecache.Cache, cf *config, unused string) error {
-	if cf.Next == "" {
-		cf.Next = "https://pokeapi.co/api/v2/location-area/"
-	}
+/*
+// I made this function purely to identify the highest base exp value among all pokemon.
+// Highest base exp value is blissy at 608 base exp.
 
-	loc, err := fetchLocations(cache, cf.Next)
-	if err != nil {
-		return err
-	}
+func baseExpScan(cache *pokecache.Cache, cf *config, unused string) error {
+	highestValue := 0
+	pkmnName := ""
+	for i := 1; i < 1026; i++ {
+		fmt.Printf("%d/1025", i) //printing a progress meter
+		url := "https://pokeapi.co/api/v2/pokemon/" + fmt.Sprintf("%d", i)
+		res, err := http.Get(url)
+		if err != nil {
+			fmt.Printf("http response error: %v", err)
+		}
+		defer res.Body.Close()
 
-	cf.Next = loc.Next
-	cf.Previous = loc.Previous
+		if res.StatusCode > 299 {
+			fmt.Printf("response failed with status code %d and \nbody: %s\n", res.StatusCode, res.Body)
+		}
 
-	for i := range loc.Results {
-		fmt.Println(loc.Results[i]["name"])
+		data, err := io.ReadAll(res.Body)
+		if err != nil {
+			fmt.Printf("io read error %v", err)
+		}
+
+		pokeData := struct {
+			BaseExperience int    `json:"base_experience"`
+			Name           string `json:"name"`
+		}{}
+		if err := json.Unmarshal(data, &pokeData); err != nil {
+			fmt.Printf("error unmarshaling json: %v", err)
+		}
+		if pokeData.BaseExperience > highestValue {
+			highestValue = pokeData.BaseExperience
+			pkmnName = pokeData.Name
+		}
+		fmt.Print("\033[H\033[2J") //this was an attempt to make the progress meter not flood the CLI. Unfortunately this clears the entire terminal, not just the line it's on.
 	}
+	fmt.Printf("Name: %s\nBase EXP: %v\n", pkmnName, highestValue)
 	return nil
-}
-
-func commandMapb(cache *pokecache.Cache, cf *config, unused string) error {
-	if cf.Previous == "" {
-		fmt.Println("you're on the first page")
-		return nil
-	}
-
-	loc, err := fetchLocations(cache, cf.Previous)
-	if err != nil {
-		return err
-	}
-
-	cf.Next = loc.Next
-	cf.Previous = loc.Previous
-
-	for i := range loc.Results {
-		fmt.Println(loc.Results[i]["name"])
-	}
-	return nil
-}
+}*/

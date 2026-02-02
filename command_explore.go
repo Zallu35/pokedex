@@ -3,8 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"pokedex/internal/pokeapi"
 	"pokedex/internal/pokeapi/pokecache"
 )
@@ -62,7 +60,7 @@ type locationDetails struct {
 	} `json:"pokemon_encounters"`
 }
 
-func commandExplore(cache *pokecache.Cache, cf *config, zone string) error {
+func commandExplore(cache *pokecache.Cache, cf *config, a *dex, zone string) error {
 	fullurl := pokeapi.BaseURL + "location-area/" + zone
 	details, err := fetchLocationDetails(cache, fullurl)
 	if err != nil {
@@ -75,24 +73,9 @@ func commandExplore(cache *pokecache.Cache, cf *config, zone string) error {
 }
 
 func fetchLocationDetails(cache *pokecache.Cache, url string) (locationDetails, error) {
-	data, ok := cache.Get(url)
-	if !ok {
-		res, err := http.Get(url)
-		if err != nil {
-			return locationDetails{}, fmt.Errorf("http response error: %v", err)
-		}
-		defer res.Body.Close()
-
-		data, err = io.ReadAll(res.Body)
-		if err != nil {
-			return locationDetails{}, fmt.Errorf("io Read error: %v", err)
-		}
-
-		if res.StatusCode > 299 {
-			return locationDetails{}, fmt.Errorf("response failed with status code: %d and\nbody: %s\n", res.StatusCode, data)
-		}
-
-		cache.Add(url, data)
+	data, err := fetchData(cache, url)
+	if err != nil {
+		return locationDetails{}, fmt.Errorf("error fetching data: %s", err)
 	}
 
 	details := locationDetails{}

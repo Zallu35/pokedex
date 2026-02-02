@@ -7,6 +7,7 @@ import (
 
 func main() {
 	theCache := pokecache.NewCache(5 * time.Second)
-	startREPL(theCache)
+	theDex := dex{pokemonList: make(map[string]pokemonData)}
+	startREPL(theCache, &theDex)
 
 }
